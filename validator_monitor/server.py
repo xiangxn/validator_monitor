@@ -22,9 +22,9 @@ class Server:
             "cpu": "",
             "memory": "",
             "jailed": False,
-            "delegator_shares": "",
-            "rewards": "",
-            "balance": "",
+            "delegator_shares": "0 ATOM",
+            "rewards": "0 ATOM",
+            "balance": "0 ATOM",
             "active": False
         }
 
@@ -51,11 +51,13 @@ class Server:
         output = subprocess.getoutput("./scripts/balance.sh")
         if output and output.startswith('{"balances":'):
             obj = json.loads(output)
-            self.info['balance'] = f"{(float(obj['balances'][0]['amount']) / 1000000):.6f} ATOM"
+            if len(obj['balances']) > 0:
+                self.info['balance'] = f"{(float(obj['balances'][0]['amount']) / 1000000):.6f} ATOM"
         output = subprocess.getoutput("./scripts/distribution.sh")
         if output and output.startswith('{"rewards":'):
             obj = json.loads(output)
-            self.info['rewards'] = f"{(float(obj['rewards'][0]['amount']) / 1000000):.6f} ATOM"
+            if len(obj['rewards']) > 0:
+                self.info['rewards'] = f"{(float(obj['rewards'][0]['amount']) / 1000000):.6f} ATOM"
         output = subprocess.getoutput("./scripts/validator.sh")
         if output and output.startswith('{"operator_address":'):
             obj = json.loads(output)
