@@ -11,18 +11,18 @@ class Server:
 
     def __init__(self, config, debug=False) -> None:
         self.config = config
-        self.logger = Logger("sync", debug=debug)
+        self.logger = Logger("monitor", debug=debug)
         self.discord_bot = DiscordBot(self.config, self.logger)
         self.info = {
-            "last_sync_block": 0,
-            "logs": "0",
+            "latest_block_height": 0,
+            "data": "0",
             "disk": "",
             "cpu": "",
             "memory": "",
-            "sync": False,
-            "mongo": False,
-            "grpc": False,
-            "graphql": False,
+            "jailed": False,
+            "delegator_shares": "",
+            "tokens": "",
+            "balance": "",
             "restful": False
         }
 
@@ -46,7 +46,7 @@ class Server:
         # print(self.info)
 
     async def get_service(self):
-        r = os.popen("docker ps -a")
+        r = os.popen("./scripts/nstatus.sh")
         lines = r.readlines()
         for line in lines:
             if "datacenter_sync_1" in line:
