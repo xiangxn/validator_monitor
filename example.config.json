@@ -1,0 +1,9 @@
+{
+    "title": "Test Server Info",
+    "check_interval": 60,
+    "bot_server": "104.152.208.128:10086",
+    "channels": {
+        "monitor": "service-monitoring"
+    },
+    "work_dir": "/work/nutbox/validator_monitor"
+}
