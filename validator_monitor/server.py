@@ -1,5 +1,7 @@
+import json
 import psutil
 import asyncio
+import subprocess
 import os
 from validator_monitor.discord_bot import DiscordBot
 from validator_monitor.logger import Logger
@@ -21,9 +23,9 @@ class Server:
             "memory": "",
             "jailed": False,
             "delegator_shares": "",
-            "tokens": "",
+            "rewards": "",
             "balance": "",
-            "restful": False
+            "active": False
         }
 
     async def get_device(self):
@@ -31,8 +33,8 @@ class Server:
         r = os.popen(f"du -h -d1 {self.config['work_dir']}")
         lines = r.readlines()
         for line in lines:
-            if "/logs\n" in line:
-                self.info['logs'] = line.split("\t")[0].strip()
+            if "/data" in line:
+                self.info['data'] = line.split("\t")[0].strip()
                 break
         # disk
         disk_info = psutil.disk_usage(self.config['work_dir'])
@@ -46,36 +48,30 @@ class Server:
         # print(self.info)
 
     async def get_service(self):
-        r = os.popen("./scripts/nstatus.sh")
-        lines = r.readlines()
-        for line in lines:
-            if "datacenter_sync_1" in line:
-                self.info['sync'] = False if " Exited " in line else True
-            if "datacenter_mongo_1" in line:
-                self.info['mongo'] = False if " Exited " in line else True
-            if "datacenter_grpc_1" in line:
-                self.info['grpc'] = False if " Exited " in line else True
-            if "datacenter_restful_1" in line:
-                self.info['restful'] = False if " Exited " in line else True
-            if "datacenter_graphql_1" in line:
-                self.info['graphql'] = False if " Exited " in line else True
+        output = subprocess.getoutput("./scripts/balance.sh")
+        if output and output.startswith('{"balances":'):
+            obj = json.loads(output)
+            self.info['balance'] = f"{(float(obj['balances'][0]['amount']) / 1000000):.6f} ATOM"
+        output = subprocess.getoutput("./scripts/distribution.sh")
+        if output and output.startswith('{"rewards":'):
+            obj = json.loads(output)
+            self.info['rewards'] = f"{(float(obj['rewards'][0]['amount']) / 1000000):.6f} ATOM"
+        output = subprocess.getoutput("./scripts/validator.sh")
+        if output and output.startswith('{"operator_address":'):
+            obj = json.loads(output)
+            self.info['delegator_shares'] = f"{(float(obj['delegator_shares'])/1000000):.6f} ATOM"
+            self.info['jailed'] = obj['jailed']
+        output = subprocess.getoutput("./scripts/vstatus.sh")
+        if output and output.startswith('- address:'):
+            self.info['active'] = True
         # print(self.info)
 
     async def get_sync_block(self):
-        block = "0"
-        line = ""
-        while block == "0":
-            r = os.popen("docker logs --tail=10 datacenter_sync_1")
-            lines = r.readlines()
-            if len(lines) > 0:
-                line = lines[-1]
-            if " Scanning events from blocks " in line:
-                block = line.split(" ")[-1]
-            elif "Current block: " in line:
-                block = line.split(" ")[2]
-            if block != "0":
-                block = block.replace("\x1b[0m\n", "")
-                self.info['last_sync_block'] = block
+        output = subprocess.getoutput("./scripts/nstatus.sh")
+        if output and output.startswith('{"NodeInfo":'):
+            obj = json.loads(output)
+            self.info['latest_block_height'] = obj['SyncInfo']['latest_block_height']
+
         # print(self.info)
 
     async def read_info(self):
@@ -88,19 +84,19 @@ class Server:
             msg = f"""
             {self.config['title']}:
             -----------------------------------------------
-            Last sync block: {self.info['last_sync_block']}
+            Latest block height: {self.info['latest_block_height']}
             -----------------------------------------------
-            Logs size: {self.info['logs']}
+            Data size: {self.info['data']}
             -----------------------------------------------
             Disk: {self.info['disk']}
             CPU: {self.info['cpu']}
             Memory: {self.info['memory']}
             -----------------------------------------------
-            Sync service: {true if self.info['sync'] else false}
-            GRPC service: {true if self.info['grpc'] else false}
-            Restful service: {true if self.info['restful'] else false}
-            Mongo service: {true if self.info['mongo'] else false}
-            Graphql service: {true if self.info['graphql'] else false}
+            Active: {true if self.info['active'] else false}
+            Jailed: {"🆘" if self.info['jailed'] else "😎"}
+            Delegator shares: {self.info['delegator_shares']}
+            Balance: {self.info['balance']}
+            Rewards: {self.info['rewards']}
             """
             self.discord_bot.push_message(msg)
             await asyncio.sleep(self.config['check_interval'])

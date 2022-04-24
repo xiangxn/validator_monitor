@@ -17,4 +17,4 @@ class DiscordBot:
             pr = PushMessageRequest(channel=channel, message=msg)
             res = client.PushMessage(pr)
             if res.code != 0:
-                self.logger.error("push_message error: {res.msg}")
+                self.logger.error(f"push_message error: {res.msg}")
