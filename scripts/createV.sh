@@ -12,4 +12,5 @@ $BINARY tx staking create-validator \
   --gas-prices="0.0025uatom" \
   --from=$FROM_NAME \
   --home=$NODE_HOME \
-  --node=$RPC_NODE
+  --node=$RPC_NODE \
+  --fees "500uatom"
