@@ -77,34 +77,36 @@ class Server:
         # print(self.info)
 
     async def read_info(self):
-        try:
-            while True:
+        while True:
+            try:
                 await self.get_device()
                 await self.get_service()
                 await self.get_sync_block()
                 true = "🟢"
                 false = "🔴"
                 msg = f"""
-                {self.config['title']}:
-                -----------------------------------------------
-                Latest block height: {self.info['latest_block_height']}
-                -----------------------------------------------
-                Data size: {self.info['data']}
-                -----------------------------------------------
-                Disk: {self.info['disk']}
-                CPU: {self.info['cpu']}
-                Memory: {self.info['memory']}
-                -----------------------------------------------
-                Active: {true if self.info['active'] else false}
-                Jailed: {"🆘" if self.info['jailed'] else "😎"}
-                Delegator shares: {self.info['delegator_shares']}
-                Balance: {self.info['balance']}
-                Rewards: {self.info['rewards']}
-                """
+                    {self.config['title']}:
+                    -----------------------------------------------
+                    Latest block height: {self.info['latest_block_height']}
+                    -----------------------------------------------
+                    Data size: {self.info['data']}
+                    -----------------------------------------------
+                    Disk: {self.info['disk']}
+                    CPU: {self.info['cpu']}
+                    Memory: {self.info['memory']}
+                    -----------------------------------------------
+                    Active: {true if self.info['active'] else false}
+                    Jailed: {"🆘" if self.info['jailed'] else "😎"}
+                    Delegator shares: {self.info['delegator_shares']}
+                    Balance: {self.info['balance']}
+                    Rewards: {self.info['rewards']}
+                    """
                 self.discord_bot.push_message(msg)
                 await asyncio.sleep(self.config['check_interval'])
-        except Exception as e:
-            self.logger.exception(f"read info error: {e}")
+            except Exception as e:
+                self.logger.exception(f"read info error: {e}")
+                await asyncio.sleep(10)
+                continue
 
     def get_tasks(self, loop: asyncio.AbstractEventLoop):
         return [loop.create_task(self.read_info())]
