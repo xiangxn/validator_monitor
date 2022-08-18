@@ -27,7 +27,7 @@ class Server:
             "balance": "0 ATOM",
             "active": False
         }
-        self.not_sync_block = False
+        self.not_sync_block = True
 
     async def get_device(self):
         # logs
