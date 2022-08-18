@@ -27,6 +27,7 @@ class Server:
             "balance": "0 ATOM",
             "active": False
         }
+        self.not_sync_block = False
 
     async def get_device(self):
         # logs
@@ -72,7 +73,13 @@ class Server:
         output = subprocess.getoutput("./scripts/nstatus.sh")
         if output and output.startswith('{"NodeInfo":'):
             obj = json.loads(output)
+            old_height = int(self.info['latest_block_height'])
             self.info['latest_block_height'] = obj['SyncInfo']['latest_block_height']
+            new_height = int(self.info['latest_block_height'])
+            if new_height <= old_height:
+                self.not_sync_block = True
+            else:
+                self.not_sync_block = False
 
         # print(self.info)
 
@@ -87,7 +94,7 @@ class Server:
                 msg = f"""
                     {self.config['title']}:
                     -----------------------------------------------
-                    Latest block height: {self.info['latest_block_height']}
+                    Latest block height: {self.info['latest_block_height']} {false if self.not_sync_block else ""}
                     -----------------------------------------------
                     Data size: {self.info['data']}
                     -----------------------------------------------
