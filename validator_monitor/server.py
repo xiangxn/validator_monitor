@@ -80,6 +80,8 @@ class Server:
                 self.not_sync_block = True
             else:
                 self.not_sync_block = False
+        else:
+            self.not_sync_block = True
 
         # print(self.info)
 
